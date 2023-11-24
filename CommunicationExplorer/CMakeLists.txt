@@ -6,9 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(CommunicationExplorer main.cpp
-    communication.h
-    communication_udp.cpp
-    communication_raw.cpp )
+    uce.h uce_client.cpp uce_server.cpp
+    uce_support.h uce_support.cpp)
 
 include(GNUInstallDirs)
 install(TARGETS CommunicationExplorer
