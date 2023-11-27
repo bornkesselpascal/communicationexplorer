@@ -146,6 +146,21 @@ void uce::client::prepare_header()
     m_hudp_ptr->check = 0;               // Checksum (NOTE: Not required according to RFC 768.)
 }
 
+bool uce::client::enable_timestamps(timestamp_mode mode)
+{
+    switch (mode) {
+    case timestamp_mode::TSTMP_SW:
+        // On the client site there is nothing to enable/initialize.
+        client_timestamps.enabled = true;
+        return true;
+    case timestamp_mode::TSTMP_ALL:
+        // This is not supported.
+        return false;
+    }
+
+    return false;
+}
+
 int uce::client::send(const void *msg, size_t size)
 {
     if (size > UCE_MAX_MSG_SIZE)
@@ -158,6 +173,6 @@ int uce::client::send(const void *msg, size_t size)
     m_hip_ptr->tot_len = htons(UCE_HEADER_IP_SIZE + UCE_HEADER_UDP_SIZE + size);
     m_hudp_ptr->len    = htons(UCE_HEADER_UDP_SIZE + size);
 
-    clock_gettime(CLOCK_MONOTONIC, &m_send_time_sw);
+    if (client_timestamps.enabled) clock_gettime(CLOCK_REALTIME, &(client_timestamps.m_snt_program));
     return ::send(m_socket, m_buffer_ptr, m_header_size + size, 0);
 }

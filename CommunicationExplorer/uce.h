@@ -25,6 +25,11 @@ enum class sock_type
     ST_RAW,
     ST_PACKET,
 };
+enum class timestamp_mode
+{
+    TSTMP_SW,
+    TSTMP_ALL,
+};
 
 class client
 {
@@ -32,10 +37,14 @@ public:
     client(sock_type type, std::string src_address, std::string dst_address, int dst_port);
     ~client();
 
-    int get_socket() { return m_socket; }
-    struct timespec get_send_time_sw() { return m_send_time_sw; }
+    int  get_socket() { return m_socket; }
+    bool enable_timestamps(timestamp_mode mode);
+    int  send(const void *msg, size_t size);
 
-    int send(const void *msg, size_t size);
+    struct client_timestamps {
+        bool enabled = false;
+        struct timespec m_snt_program;
+    } client_timestamps ;
 
 private:
     void prepare_header();
@@ -57,8 +66,6 @@ private:
     size_t m_header_size;
 
     void* m_data_ptr = NULL;
-
-    struct timespec m_send_time_sw;     // Seconds/Nanoseconds
 };
 
 class server
@@ -67,11 +74,16 @@ public:
     server(sock_type type, std::string dst_address, int dst_port);
     ~server();
 
-    int get_socket() const { return m_socket;  }
-    struct timeval get_rec_time_socket() { return m_rec_time_socket; }
-    struct timespec get_rec_time_sw() { return m_rec_time_sw; }
+    int  get_socket() const { return m_socket; }
+    bool enable_timestamps(timestamp_mode mode);
+    int  receive(void *msg, size_t max_size);
 
-    int receive(void *msg, size_t max_size);
+    struct server_timestamps {
+        bool enabled = false;
+        struct timespec m_rec_hw;
+        struct timespec m_rec_sw;
+        struct timespec m_rec_program;
+    } server_timestamps ;
 
 private:
     int m_socket;
@@ -81,8 +93,11 @@ private:
     int m_dst_port;
     std::string m_dst_interface;
 
-    struct timeval m_rec_time_socket;   // Seconds/Microseconds
-    struct timespec m_rec_time_sw;      // Seconds/Nanoseconds
+    struct receive_helper {
+        struct iovec iov;
+        struct msghdr msh;
+        char control_buffer[1024];
+    } m_receive_helper;
 };
 
 }
